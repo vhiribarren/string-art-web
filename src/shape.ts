@@ -12,5 +12,4 @@ function* generateCircleShape(center: Point, radius: number, pointCount: number)
         const direction = new Direction(Math.cos(angleOrth), Math.sin(angleOrth));
         yield new Ray(point, direction);
     }
-    return;
 }
