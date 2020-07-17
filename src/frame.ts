@@ -1,15 +1,17 @@
 import {Vec2} from "./math"
 
-export {Frame, CircleFrame, Pin, Point, Direction}
+export {Frame, CircleFrame, Ray, Point, Direction}
 
 
 class Point extends Vec2 {};
 class Direction extends Vec2 {};
-class Pin extends Point {}
+class Ray {
+    constructor(readonly origin: Point, readonly direction: Direction) {}
+}
 
 interface Frame {
-    readonly pins: Pin[];
-    nearestPins(point: Point, direction: Direction): [Pin, Pin] | undefined;
+    readonly pins: Point[];
+    nearestPins(ray: Ray): [Point, Point] | undefined;
 }
 
 
@@ -18,7 +20,7 @@ class CircleFrame implements Frame {
     #origin: Point;
     #radius: number;
 
-    readonly pins: Pin[];
+    readonly pins: Point[];
 
     constructor(origin: Point=new Point(0, 0), radius: number=1, pinCount: number=10) {
         this.#origin = origin;
@@ -28,16 +30,16 @@ class CircleFrame implements Frame {
             let angle = (2*Math.PI) * i / pinCount ;
             let x = origin.x + radius * Math.cos(angle);
             let y = origin.y + radius * Math.sin(angle);
-            this.pins.push(new Pin(x, y));
+            this.pins.push(new Point(x, y));
         }
     }
 
-    nearestPins(point: Point, direction: Point): [Pin, Pin] | undefined {
-        const collisionPoints = this.circleLineCollision(point, direction);
+    nearestPins(ray: Ray): [Point, Point] | undefined {
+        const collisionPoints = this.circleLineCollision(ray);
         if (! collisionPoints) {
             return undefined;
         }
-        const results: Pin[] = [];
+        const results: Point[] = [];
         // TODO Not needed to browse the array, we can directly access in the pins array
         collisionPoints.forEach( (collisionPoint, _) => {
             let minDistance = Number.MAX_VALUE;
@@ -51,14 +53,14 @@ class CircleFrame implements Frame {
             });
             results.push(minPin);
         });
-        return results as [Pin, Pin];
+        return results as [Point, Point];
     }
 
-    circleLineCollision(point: Point, direction: Point): [Point, Point] | undefined {
+    circleLineCollision(ray: Ray): [Point, Point] | undefined {
         const r_square = Math.pow(this.#radius, 2);
-        const u = direction.normalize();
+        const u = ray.direction.normalize();
         const C = this.#origin;
-        const A = point;
+        const A = ray.origin;
         const L = C.sub(A);
         const d = L.dot(u);
         const l_square = L.dot(L);
@@ -78,12 +80,12 @@ class CircleFrame implements Frame {
 
 class RectangularFrame implements Frame {
 
-    pins: Pin[] = [];
+    pins: Point[] = [];
 
     constructor(origin: Point, width: number, height: number, widthPinCount: number=10, heightPinCount: number=10) {
     }
 
-    nearestPins(point: Point, direction: Point): [Point, Point] {
+    nearestPins(ray: Ray): [Point, Point] {
         throw new Error("Method not implemented.");
     }
 
