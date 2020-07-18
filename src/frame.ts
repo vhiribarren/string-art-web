@@ -64,9 +64,11 @@ class CircleFrame implements Frame {
         const L = C.sub(A);
         const d = L.dot(u);
         const l_square = L.dot(L);
-        if (d < 0.0 && l_square > r_square) {
-            return undefined;
-        }
+        // If enabled, only consider points inside the circle
+        // TODO Add a parameter to accept or refuse external points
+        //if (l_square > r_square) {
+        //    return undefined;
+        //}
         const m_square = l_square - Math.pow(d, 2);
         if (m_square > r_square) {
             return undefined;

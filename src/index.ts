@@ -1,11 +1,11 @@
 import {CircleFrame, Frame, Point, Direction, Ray} from "./frame";
 import {drawCircle, drawLine} from "./drawing";
-import {generateCircleShape} from "./shape";
+import {generateCircleShape, generateBezierCurve} from "./shape";
 
 const CANVAS_WIDTH = 500;
 const CANVAS_HEIGHT = 500;
 const FRAME_PIN_NB = 100;
-const FRAME_STRING_NB = 50;
+const FRAME_STRING_NB = 500;
 
 
 function drawPins(ctx: CanvasRenderingContext2D, points: Point[]) {
@@ -32,9 +32,15 @@ const testRay = new Ray(testPoint, testDirection);
 drawPins(ctx, frame.pins);
 
 
-const circleGenerator = generateCircleShape(new Point(CANVAS_WIDTH/4, CANVAS_HEIGHT/2),  CANVAS_HEIGHT/4, FRAME_STRING_NB);
+//const shapeGenerator = generateCircleShape(new Point(CANVAS_WIDTH/4, CANVAS_HEIGHT/2),  CANVAS_HEIGHT/4, FRAME_STRING_NB);
+const shapeGenerator = generateBezierCurve(
+    new Point(0, CANVAS_HEIGHT),
+    new Point(0, -CANVAS_HEIGHT),
+    new Point(CANVAS_WIDTH, 2*CANVAS_HEIGHT),
+    new Point(CANVAS_WIDTH, 0),
+    FRAME_STRING_NB);
 
-for (let ray of circleGenerator) {
+for (let ray of shapeGenerator) {
     const pins = frame.nearestPins(ray);
     if (pins) {
         drawLine(ctx, pins[0].x, pins[0].y, pins[1].x, pins[1].y)
