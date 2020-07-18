@@ -18,7 +18,7 @@ module.exports = {
     plugins: [
         new CleanWebpackPlugin(),
         new HtmlWebpackPlugin({
-            title: 'WebGL2 Experiments',
+            title: 'String Art Experiments',
         }),
     ],
     module: {
