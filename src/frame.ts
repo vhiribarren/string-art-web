@@ -1,6 +1,6 @@
 import {Vec2} from "./math"
 
-export {Frame, CircleFrame, Ray, Point, Direction}
+export {Frame, CircleFrame, RectangleFrame, Ray, Point, Direction}
 
 
 class Point extends Vec2 {};
@@ -80,15 +80,96 @@ class CircleFrame implements Frame {
 }
 
 
-class RectangularFrame implements Frame {
+class RectangleFrame implements Frame {
 
     pins: Point[] = [];
+    private pointTopLeft: Point;
+    private pointBottomLeft: Point;
+    private pointTopRight: Point;
+    private pointBottomRight: Point;
 
     constructor(origin: Point, width: number, height: number, widthPinCount: number=10, heightPinCount: number=10) {
+        this.pointTopLeft = origin;
+        this.pointBottomLeft = new Point(origin.x, origin.y + height);
+        this.pointTopRight = new Point(origin.x + width, origin.y);
+        this.pointBottomRight = new Point(origin.x + width, origin.y + height);
+        const widthStep = width / widthPinCount;
+        for (let i=0; i <widthPinCount; i++) {
+            this.pins.push(new Point(origin.x + i*widthStep, origin.y));
+            this.pins.push(new Point(origin.x + width - i*widthStep, origin.y + height));
+        }
+        const heightStep = height / heightPinCount;
+        for (let i=0; i <heightPinCount; i++) {
+            this.pins.push(new Point(origin.x + width, origin.y + i*heightStep));
+            this.pins.push(new Point(origin.x, origin.y + height - i*heightStep));
+        }
     }
 
     nearestPins(ray: Ray): [Point, Point] {
-        throw new Error("Method not implemented.");
+        const collisionPoints = this.lineRectangleCollision(ray);
+        if (! collisionPoints) {
+            return undefined;
+        }
+        const results: Point[] = [];
+        collisionPoints.forEach( (collisionPoint, _) => {
+            let minDistance = Number.MAX_VALUE;
+            let minPin = undefined;
+            this.pins.forEach( (pinCandidate, _) => {
+                let distance = collisionPoint.distanceSquareTo(pinCandidate);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    minPin = pinCandidate;
+                }
+            });
+            results.push(minPin);
+        });
+        return results as [Point, Point];
+    }
+
+    private lineRectangleCollision(ray: Ray): [Point, Point] | undefined {
+        const result: Point[] = [];
+        const widthCandidates = [
+            this.lineIntersection(ray, new Ray(this.pointTopLeft, new Direction(1, 0))),
+            this.lineIntersection(ray, new Ray(this.pointBottomRight, new Direction(-1, 0))),
+        ]
+        widthCandidates.forEach((point) => {
+            if (point == null) {
+                return;
+            }
+            if (point.x > this.pointBottomLeft.x && point.x < this.pointBottomRight.x) {
+                result.push(point);
+            }
+        })
+        const heightCandidates = [
+            this.lineIntersection(ray, new Ray(this.pointTopRight, new Direction(0, 1))),
+            this.lineIntersection(ray, new Ray(this.pointBottomLeft, new Direction(0, -1))),
+        ]
+        heightCandidates.forEach((point) => {
+            if (point == null) {
+                return;
+            }
+            if ( point.y < this.pointBottomLeft.y && point.y > this.pointTopLeft.y ) {
+                result.push(point);
+            }
+        })
+        return result.length == 2 ? result as [Point, Point] : undefined;
+    }
+
+    private lineIntersection(rayLeft: Ray, rayRight: Ray): Point | undefined {
+        // https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection
+        const l1p1 = rayLeft.origin;
+        const l1p2 = rayLeft.origin.add(rayLeft.direction);
+        const l2p1 = rayRight.origin;
+        const l2p2 = rayRight.origin.add(rayRight.direction);
+        const n = (l1p1.y - l2p1.y) * (l2p2.x - l2p1.x) - (l1p1.x - l2p1.x) * (l2p2.y - l2p1.y);
+        const d = (l1p2.x - l1p1.x) * (l2p2.y - l2p1.y) - (l1p2.y - l1p1.y) * (l2p2.x - l2p1.x);
+        if( d === 0 ) {
+            return undefined;
+        }
+        const t = n / d;
+        const px = l1p1.x + t * (l1p2.x - l1p1.x);
+        const py = l1p1.y + t * (l1p2.y - l1p1.y);
+        return new Point(px, py);
     }
 
 }
